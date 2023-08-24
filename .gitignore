@@ -33,3 +33,9 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Python venv
+/scripts/bin
+/scripts/include
+/scripts/lib
+/scripts/pyvenv.cfg
