@@ -28,6 +28,11 @@ export class CourseController {
   //   return this.courseService.update(+id, updateCourseDto);
   // }
 
+  @Post('/upload')
+  massUpload() {
+    this.courseService.massUpload();
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.courseService.remove(+id);

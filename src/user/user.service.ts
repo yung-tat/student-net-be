@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { SetCourseListDTO } from 'src/taking/dto/set-course-list.dto';
+import { TakingService } from 'src/taking/taking.service';
 import { errorResponse, successResponse } from 'src/utils/responses';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -11,6 +13,9 @@ export class UserService {
     @InjectRepository(User)
     public userRepo: Repository<User>,
   ) {}
+
+  @Inject(TakingService)
+  private takingService: TakingService;
 
   async create(createUserDto: CreateUserDto) {
     Logger.log('Creating a new user');
@@ -46,9 +51,20 @@ export class UserService {
     return successResponse(200, 'Got user', user);
   }
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+  async findSimilar(id: number) {
+    Logger.log(`Getting similar students to id ${id}`);
+    const similarStudentIds = await this.takingService.getSimilarStudents(id);
+    return successResponse(
+      200,
+      `Found ${similarStudentIds.length} similar students`,
+      similarStudentIds,
+    );
+  }
+
+  async setCourses(setCourseListDTO: SetCourseListDTO) {
+    Logger.log(`Setting courses for id ${setCourseListDTO.student_id}`);
+    this.takingService.setStudentCourses(setCourseListDTO);
+  }
 
   async remove(id: number) {
     Logger.log(`Deleting user ${id}`);

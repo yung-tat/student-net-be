@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateCourseDto } from './dto/create-course.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Course } from './entities/course.entity';
-import { Repository } from 'typeorm';
 import { errorResponse, successResponse } from 'src/utils/responses';
+import { Repository } from 'typeorm';
+import courseList from '../courselists/uwcoursesf23.json';
+import { CreateCourseDto } from './dto/create-course.dto';
+import { Course } from './entities/course.entity';
 
 @Injectable()
 export class CourseService {
@@ -14,8 +15,16 @@ export class CourseService {
 
   async create(createCourseDto: CreateCourseDto) {
     Logger.log('Creating a new course');
-    const newCourse = await this.courseRepo.insert(createCourseDto);
-    return successResponse(200, 'Created new user', newCourse.generatedMaps);
+    try {
+      const newCourse = await this.courseRepo.insert(createCourseDto);
+      return successResponse(
+        200,
+        'Created new course',
+        newCourse.generatedMaps,
+      );
+    } catch (error) {
+      console.log(error.detail);
+    }
   }
 
   async findAll() {
@@ -40,9 +49,22 @@ export class CourseService {
     return successResponse(200, 'Got course', course);
   }
 
-  // update(id: number, updateCourseDto: UpdateCourseDto) {
-  //   return `This action updates a #${id} course`;
-  // }
+  async massUpload() {
+    courseList.forEach((course_info) => {
+      const newEntry = {
+        course_code: course_info.course_code,
+        course_name: course_info.name,
+        semester: 'F23',
+      };
+      this.courseRepo
+        .createQueryBuilder()
+        .insert()
+        .into(Course)
+        .values(newEntry)
+        .orIgnore()
+        .execute();
+    });
+  }
 
   async remove(id: number) {
     Logger.log(`Deleting course ${id}`);

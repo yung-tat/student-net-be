@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Taking } from './entities/taking.entity';
+import { successResponse } from 'src/utils/responses';
 import { Repository } from 'typeorm';
 import { SetCourseListDTO } from './dto/set-course-list.dto';
-import { successResponse } from 'src/utils/responses';
+import { Taking } from './entities/taking.entity';
 
 @Injectable()
 export class TakingService {
@@ -22,6 +22,7 @@ export class TakingService {
         user_id: setCourseListDTO.student_id,
       },
     });
+
     studentCourseList.forEach(async (course) => {
       // If a course is missing from the new list
       if (!setCourseListDTO.course_ids.includes(course.course_id)) {
@@ -56,23 +57,18 @@ export class TakingService {
     });
   }
 
+  // Helper function for user service
   async getSimilarStudents(student_id: number) {
-    // Get course list of student
-    const studentCourseList = await this.takingRepo.find({
-      where: {
-        user_id: student_id,
-      },
-    });
-    // Main query
-    const similarStudentIds = await this.takingRepo
-      .createQueryBuilder()
-      .select('taking.user_id, COUNT(taking.course_id) as courses')
-      .from(Taking, 'taking')
-      .where('user_id != :current && course_id IN (:...courses) ', {
-        current: student_id,
-        courses: studentCourseList.map((course) => course.course_id),
-      })
-      .getRawMany();
-    return successResponse(200, 'Queried similar students', similarStudentIds);
+    const similarStudentIds = await this.takingRepo.query(
+      `SELECT t1.user_id as student_id, COUNT(t1.course_id) as courses
+      FROM TAKING as t1, 
+        (SELECT t.course_id
+        FROM TAKING as t
+        WHERE t.user_id = ${student_id}) as t2
+      WHERE t1.user_id != ${student_id} AND t1.course_id = t2.course_id
+      GROUP BY t1.user_id
+      HAVING COUNT(t1.course_id) > 0`,
+    );
+    return similarStudentIds;
   }
 }
